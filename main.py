@@ -1,6 +1,7 @@
 from telethon import TelegramClient, events
 from telethon.tl.functions.messages import SendReactionRequest
 import os
+import asyncio
 
 # Environment variables থেকে API ডেটা নেওয়া
 api_id = int(os.environ.get("API_ID"))
@@ -11,23 +12,26 @@ group_id = os.environ.get("GROUP_ID")            # গ্রুপ username ব�
 # Telethon ক্লায়েন্ট তৈরি
 client = TelegramClient("session", api_id, api_hash)
 
-# 15টি রিয়েক্ট ইমোজি
+# রিয়েক্ট ইমোজির লিস্ট (খালি স্ট্রিং বাদ দেওয়া হয়েছে)
 reactions = [
     '❤️', '🔥', '👍', '😍', '😱', '👏', '💯',
-    '❤️‍🔥', '🎉', '🤩', '', '👌🏻', '🗿', '⚡'
+    '❤️‍🔥', '🎉', '🤩', '👌🏻', '🗿', '⚡'
 ]
 
-# নতুন মেসেজ এলে এবং আপনি পোস্ট করলে রিয়েক্ট দিবে
 @client.on(events.NewMessage(chats=group_id))
 async def react(event):
     if event.sender_id == user_id:
-        await client(SendReactionRequest(
-            peer=event.chat_id,
-            msg_id=event.id,
-            reaction=reactions
-        ))
+        for reaction in reactions:
+            try:
+                await client(SendReactionRequest(
+                    peer=event.chat_id,
+                    msg_id=event.id,
+                    reaction=reaction
+                ))
+                await asyncio.sleep(0.3)  # একটু সময় দিব যাতে স্প্যাম মনে না হয়
+            except Exception as e:
+                print(f"Failed to send reaction {reaction}: {e}")
 
-# Render ping এর জন্য /ping কমান্ড
 @client.on(events.NewMessage(pattern="/ping"))
 async def ping(event):
     await event.reply("I'm alive!")
